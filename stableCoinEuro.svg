@@ -1,0 +1,150 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+	<title id="title">Digital Euro Coin</title>
+	<desc id="desc">Aufwaendige, moderne SVG-Muenze fuer einen digitalen Euro mit metallischem Ring, Neon-Glow und technologischen Details.</desc>
+
+	<defs>
+		<radialGradient id="bgGlow" cx="50%" cy="45%" r="70%">
+			<stop offset="0%" stop-color="#0a1d45"/>
+			<stop offset="55%" stop-color="#08122f"/>
+			<stop offset="100%" stop-color="#050914"/>
+		</radialGradient>
+
+		<linearGradient id="rimGold" x1="0%" y1="0%" x2="100%" y2="100%">
+			<stop offset="0%" stop-color="#fff4b1"/>
+			<stop offset="20%" stop-color="#f6d976"/>
+			<stop offset="48%" stop-color="#c9982f"/>
+			<stop offset="72%" stop-color="#f2cd63"/>
+			<stop offset="100%" stop-color="#8b6420"/>
+		</linearGradient>
+
+		<radialGradient id="coreBlue" cx="35%" cy="30%" r="80%">
+			<stop offset="0%" stop-color="#9de8ff"/>
+			<stop offset="35%" stop-color="#4dc7ff"/>
+			<stop offset="70%" stop-color="#0f78c8"/>
+			<stop offset="100%" stop-color="#0a3f80"/>
+		</radialGradient>
+
+		<linearGradient id="innerRim" x1="0%" y1="0%" x2="100%" y2="100%">
+			<stop offset="0%" stop-color="#f9e7a6"/>
+			<stop offset="50%" stop-color="#d7ad4c"/>
+			<stop offset="100%" stop-color="#8f6a22"/>
+		</linearGradient>
+
+		<linearGradient id="chipLine" x1="0%" y1="0%" x2="100%" y2="0%">
+			<stop offset="0%" stop-color="#7ae8ff" stop-opacity="0"/>
+			<stop offset="50%" stop-color="#7ae8ff" stop-opacity="0.95"/>
+			<stop offset="100%" stop-color="#7ae8ff" stop-opacity="0"/>
+		</linearGradient>
+
+		<filter id="softGlow" x="-30%" y="-30%" width="160%" height="160%">
+			<feGaussianBlur stdDeviation="7" result="blur"/>
+			<feMerge>
+				<feMergeNode in="blur"/>
+				<feMergeNode in="SourceGraphic"/>
+			</feMerge>
+		</filter>
+
+		<filter id="coinShadow" x="-40%" y="-40%" width="180%" height="180%">
+			<feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#001230" flood-opacity="0.6"/>
+		</filter>
+
+		<clipPath id="coreClip">
+			<circle cx="512" cy="512" r="320"/>
+		</clipPath>
+
+		<!-- Textpfade entlang des inneren Kreisverlaufs -->
+		<path id="innerLabelTopArc" d="M266 512 A246 246 0 0 0 758 512"/>
+		<path id="innerLabelBottomArc" d="M266 512 A246 246 0 0 1 758 512"/>
+
+		<pattern id="microDots" width="14" height="14" patternUnits="userSpaceOnUse">
+			<circle cx="2" cy="2" r="1" fill="#ffffff" opacity="0.12"/>
+			<circle cx="9" cy="7" r="1" fill="#ffffff" opacity="0.09"/>
+			<circle cx="6" cy="12" r="1" fill="#ffffff" opacity="0.08"/>
+		</pattern>
+	</defs>
+
+	<!-- Transparenter Hintergrund: kein vollflaechiges Hintergrund-Rechteck. -->
+
+	<g filter="url(#coinShadow)">
+		<circle cx="512" cy="512" r="410" fill="#081838" opacity="0.35"/>
+
+		<circle cx="512" cy="512" r="392" fill="url(#rimGold)"/>
+		<circle cx="512" cy="512" r="368" fill="#7f5b1f" opacity="0.35"/>
+		<circle cx="512" cy="512" r="350" fill="url(#innerRim)"/>
+
+		<circle cx="512" cy="512" r="324" fill="url(#coreBlue)"/>
+		<circle cx="512" cy="512" r="324" fill="url(#microDots)"/>
+
+		<circle cx="512" cy="512" r="308" fill="none" stroke="#9cf6ff" stroke-opacity="0.5" stroke-width="2"/>
+		<circle cx="512" cy="512" r="282" fill="none" stroke="#7fdfff" stroke-opacity="0.35" stroke-width="1.5" stroke-dasharray="6 8"/>
+
+		<g clip-path="url(#coreClip)">
+			<g opacity="0.9" filter="url(#softGlow)">
+				<rect x="220" y="505" width="584" height="3" rx="2" fill="url(#chipLine)"/>
+				<rect x="220" y="560" width="584" height="2.5" rx="2" fill="url(#chipLine)" opacity="0.75"/>
+				<rect x="220" y="450" width="584" height="2.5" rx="2" fill="url(#chipLine)" opacity="0.7"/>
+			</g>
+
+			<g stroke="#74dfff" stroke-opacity="0.45" stroke-width="2" fill="none">
+				<path d="M288 372 C390 330, 634 330, 736 372"/>
+				<path d="M276 652 C392 708, 632 708, 748 652"/>
+				<path d="M324 308 C448 260, 576 260, 700 308" opacity="0.6"/>
+				<path d="M324 716 C448 764, 576 764, 700 716" opacity="0.6"/>
+			</g>
+
+			<g fill="#b7f3ff" opacity="0.7">
+				<circle cx="315" cy="508" r="5"/>
+				<circle cx="355" cy="508" r="4"/>
+				<circle cx="669" cy="508" r="5"/>
+				<circle cx="709" cy="508" r="4"/>
+				<circle cx="315" cy="562" r="4"/>
+				<circle cx="709" cy="562" r="4"/>
+			</g>
+		</g>
+
+		<g>
+			<circle cx="512" cy="512" r="204" fill="#0e6bb8" opacity="0.45"/>
+			<circle cx="512" cy="512" r="196" fill="none" stroke="#b9efff" stroke-opacity="0.85" stroke-width="4"/>
+
+			<text x="500" y="540" text-anchor="middle" dominant-baseline="middle" font-size="290" font-weight="700"
+						font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+						fill="#fef7c6" stroke="#8f6a22" stroke-width="5">€</text>
+
+			<text text-anchor="middle" letter-spacing="5"
+						font-size="36" font-weight="700"
+						font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+						fill="#dbf8ff" opacity="0.92">
+				<textPath href="#innerLabelTopArc" startOffset="50%">DIGITAL EURO</textPath>
+			</text>
+
+			<text text-anchor="middle" letter-spacing="4"
+						font-size="26" font-weight="600"
+						font-family="'Segoe UI', 'Helvetica Neue', Arial, sans-serif"
+						fill="#bdefff" opacity="0.9">
+				<textPath href="#innerLabelBottomArc" startOffset="50%">STABLE VALUE LAYER</textPath>
+			</text>
+		</g>
+
+		<g transform="translate(512 512)">
+			<g fill="#f8dc7d" opacity="0.9">
+				<circle cx="0" cy="-352" r="9"/>
+				<circle cx="304" cy="-176" r="9"/>
+				<circle cx="304" cy="176" r="9"/>
+				<circle cx="0" cy="352" r="9"/>
+				<circle cx="-304" cy="176" r="9"/>
+				<circle cx="-304" cy="-176" r="9"/>
+			</g>
+			<g fill="#f4cd68" opacity="0.85">
+				<circle cx="176" cy="-304" r="7"/>
+				<circle cx="352" cy="0" r="7"/>
+				<circle cx="176" cy="304" r="7"/>
+				<circle cx="-176" cy="304" r="7"/>
+				<circle cx="-352" cy="0" r="7"/>
+				<circle cx="-176" cy="-304" r="7"/>
+			</g>
+		</g>
+
+		<ellipse cx="448" cy="390" rx="160" ry="70" fill="#ffffff" opacity="0.26"/>
+		<ellipse cx="560" cy="730" rx="190" ry="60" fill="#041532" opacity="0.18"/>
+	</g>
+</svg>
