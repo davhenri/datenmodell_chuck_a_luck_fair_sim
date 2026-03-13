@@ -1,4 +1,5 @@
-from spieler, wuerfel import *
+from spieler import *
+from wuerfel import *
 
 class Spielfeld:
 
