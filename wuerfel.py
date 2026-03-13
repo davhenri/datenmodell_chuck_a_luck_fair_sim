@@ -1,17 +1,16 @@
 from random import randint
 
-class wuerfel(object):
+class Wuerfel:
+    __slots__ = ('augen',)
 
-   __slots__ = ('augen',)
-
-    """Initialisierung"""
     def __init__(self):
+        """Initialisierung"""
         self.augen = 0
- 
-    """werfen() erzeugt eine W6-Zufallszahl(int)."""
-    def werfen(self):
+
+    def werfen(self) -> int:
+        """Erzeugt eine W6-Zufallszahl und speichert sie in self.augen."""
         self.augen = randint(1, 6)
 
-    """getAugen() gibt die Zufallszahl von werfen() aus."""
-    def getAugen(self):
+    def getAugen(self) -> int:
+        """Gibt die zuletzt geworfene Zahl zurück."""
         return self.augen
