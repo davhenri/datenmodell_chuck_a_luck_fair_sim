@@ -10,6 +10,7 @@ class Wuerfel:
     def werfen(self) -> int:
         """Erzeugt eine W6-Zufallszahl."""
         self.augen = randint(1, 6)            # Erzeugt eine W6-Zufallszahl und speichert sie in self.augen.
+        return self.augen
 
     def getAugen(self) -> int:
         """Gibt die zuletzt geworfene Zahl zurück."""
