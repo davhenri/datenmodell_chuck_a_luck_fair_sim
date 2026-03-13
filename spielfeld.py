@@ -1,3 +1,5 @@
+from spieler import 
+
 class Spielfeld(object):
   def __init__(self):
     self.feld =[1,2,3,4,5,6]
@@ -12,4 +14,8 @@ def trefferZaehlen(self, tipp, augen):
   for a in augen:
     if tipp == a:
       self.treffer += 1
+
+def rundeZocken(self):
+  self.trefferZaehlen()
+  self.buchen()
     
