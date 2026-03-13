@@ -1,6 +1,8 @@
 class Player:
 
     def __init__(self, start_geld):
+        """Initialisierung"""
+        
         # Geld zum Setzen
         self.start_geld = start_geld
         self.dollar = start_geld
@@ -31,6 +33,8 @@ class Player:
         self.konto += gewinn
 
     def rundeVerbuchen(self, tipp, augen, treffer, einsatz, auszahlung):
+
+        """ Der Umsatz wird verbucht. """
         netto = auszahlung - einsatz
         self.runden += 1
         self.verlauf.append(
@@ -48,6 +52,7 @@ class Player:
         self.feeling = self._feeling_aktualisieren(netto)
 
     def _feeling_aktualisieren(self, netto):
+        """ Aktualisierung des Feelings abhängig vom Umsatz. """
         letzte = self.verlauf[-3:]
         siege = sum(1 for r in letzte if r["netto"] > 0)
         niederlagen = sum(1 for r in letzte if r["netto"] < 0)
@@ -72,14 +77,11 @@ class Player:
     def getVermoegen(self):
         return self.dollar + self.konto
 
-
     def getNetto(self):
         return self.getVermoegen() - self.start_geld
 
-
     def getFeeling(self):
         return self.feeling
-
 
     def getVerlauf(self):
         return list(self.verlauf)
