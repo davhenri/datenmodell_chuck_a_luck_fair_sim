@@ -1,596 +1,449 @@
-import spieler, spielfeld, wuerfel
-from tkinter import *
-from PIL import Image, ImageTk
-import os
+import tkinter as tk
+from pathlib import Path
+from random import randint
+
+# ============================
+# Logik: Wuerfel, Spieler, Spielfeld
+# ============================
+
+class Wuerfel:
+    __slots__ = ('augen',)
+
+    def __init__(self):
+        self.augen = 0
+
+    def werfen(self) -> int:
+        self.augen = randint(1, 6)
+        return self.augen
+
+    def getAugen(self) -> int:
+        return self.augen
+
+
+class Spieler:
+    def __init__(self, start_geld):
+        self.start_geld = start_geld
+        self.dollar = start_geld
+        self.konto = 0
+        self.runden = 0
+        self.verlauf = []
+        self.feeling = "neutral"
+
+    def setze(self):
+        if self.dollar > 0:
+            self.dollar -= 1
+            return 1
+        return 0
+
+    def gewinnVerbuchen(self, gewinn):
+        self.konto += gewinn
+
+    def rundeVerbuchen(self, tipp, augen, treffer, einsatz, auszahlung):
+        netto = auszahlung - einsatz
+        self.runden += 1
+        self.verlauf.append(
+            {
+                "runde": self.runden,
+                "tipp": tipp,
+                "augen": augen,
+                "treffer": treffer,
+                "einsatz": einsatz,
+                "auszahlung": auszahlung,
+                "netto": netto,
+                "vermögen": self.getVermoegen(),
+            }
+        )
+        self.feeling = self._feeling_aktualisieren(netto)
+
+    def _feeling_aktualisieren(self, netto):
+        letzte = self.verlauf[-3:]
+        siege = sum(1 for r in letzte if r["netto"] > 0)
+        niederlagen = sum(1 for r in letzte if r["netto"] < 0)
+        gesamt_netto = self.getNetto()
+
+        if netto >= 3 or siege >= 2:
+            return "euphorisch"
+        if netto > 0:
+            return "optimistisch"
+        if niederlagen >= 2 and gesamt_netto < 0:
+            return "frustriert"
+        if gesamt_netto < 0:
+            return "angespannt"
+        return "neutral"
+
+    def getDollar(self):
+        return self.dollar
+
+    def getKonto(self):
+        return self.konto
+
+    def getVermoegen(self):
+        return self.dollar + self.konto
+
+    def getNetto(self):
+        return self.getVermoegen() - self.start_geld
+
+    def getFeeling(self):
+        return self.feeling
+
+    def getVerlauf(self):
+        return list(self.verlauf)
+
+
+class Spielfeld:
+    """Verwaltet Spielrunde, Auszahlung und Fairness-Statistik von Chuck-a-Luck."""
+    def __init__(self, auszahlungs_faktor=1.0):
+        self.feld = [1, 2, 3, 4, 5, 6]
+        self.wuerfel = [Wuerfel(), Wuerfel(), Wuerfel()]
+
+        # Auszahlung: klassisch wäre 1x pro Treffer. Hier via Faktor erweiterbar.
+        self.auszahlungs_faktor = auszahlungs_faktor
+        self.runden = 0
+        self.gesamt_einsatz = 0
+        self.gesamt_auszahlung = 0
+        self.treffer_histogramm = {0: 0, 1: 0, 2: 0, 3: 0}
+
+    def werfen(self):
+        augen = []
+        for w in self.wuerfel:
+            w.werfen()
+            augen.append(w.getAugen())
+        return augen
+
+    def trefferZaehlen(self, tipp, augen):
+        return sum(1 for a in augen if a == tipp)
+
+    def buchen(self, einsatz, auszahlung):
+        self.gesamt_einsatz += einsatz
+        self.gesamt_auszahlung += auszahlung
+
+    def berechneAuszahlung(self, einsatz, treffer):
+        # Auszahlung pro Treffer: einsatz * treffer * faktor (klassisch faktor=1.0)
+        return int(einsatz * treffer * self.auszahlungs_faktor)
+
+    def rundeZocken(self, spieler: Spieler, tipp: int):
+        einsatz = spieler.setze()
+        if einsatz == 0:
+            return None
+
+        augen = self.werfen()
+        treffer = self.trefferZaehlen(tipp, augen)
+        auszahlung = self.berechneAuszahlung(einsatz, treffer)
+
+        if auszahlung > 0:
+            spieler.gewinnVerbuchen(auszahlung)
+
+        self.buchen(einsatz, auszahlung)
+        self.runden += 1
+        self.treffer_histogramm[treffer] += 1
+
+        spieler.rundeVerbuchen(tipp, augen, treffer, einsatz, auszahlung)
+
+        return {
+            "runde": self.runden,
+            "tipp": tipp,
+            "augen": augen,
+            "treffer": treffer,
+            "einsatz": einsatz,
+            "auszahlung": auszahlung,
+            "netto": auszahlung - einsatz,
+        }
+
+    def fairnessStatistik(self):
+        if self.gesamt_einsatz == 0:
+            empirische_auszahlungsquote = 0.0
+        else:
+            empirische_auszahlungsquote = self.gesamt_auszahlung / self.gesamt_einsatz
+
+        theoretische_trefferverteilung = {
+            0: 125 / 216,
+            1: 75 / 216,
+            2: 15 / 216,
+            3: 1 / 216,
+        }
+
+        theoretische_auszahlungsquote = (
+            theoretische_trefferverteilung[0] * 0
+            + theoretische_trefferverteilung[1] * 1
+            + theoretische_trefferverteilung[2] * 2
+            + theoretische_trefferverteilung[3] * 3
+        )  # faktor=1.0, klassisch
+
+        if self.runden == 0:
+            empirische_trefferverteilung = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
+        else:
+            empirische_trefferverteilung = {k: self.treffer_histogramm[k] / self.runden for k in self.treffer_histogramm}
+
+        return {
+            "runden": self.runden,
+            "gesamt_einsatz": self.gesamt_einsatz,
+            "gesamt_auszahlung": self.gesamt_auszahlung,
+            "hausgewinn": self.gesamt_einsatz - self.gesamt_auszahlung,
+            "empirische_auszahlungsquote": empirische_auszahlungsquote,
+            "theoretische_auszahlungsquote": theoretische_auszahlungsquote,
+            "empirische_trefferverteilung": empirische_trefferverteilung,
+            "theoretische_trefferverteilung": theoretische_trefferverteilung,
+            "fair": abs(empirische_auszahlungsquote - 1.0) <= 0.05 if self.gesamt_einsatz > 0 else None,
+        }
+
+# ============================
+# GUI
+# ============================
 
 class GUI:
     def __init__(self):
-        # Zustände und Widgets als Instanzattribute
         self.mode = "start"
 
-        # Spielobjekte
-        self.spieler = None
-        self.spielfeld = None
-        self.selected_tile = None
-        self.current_bet = 0
-
-        # Bildressourcen laden
-        self.base_path = os.path.dirname(os.path.abspath(__file__))
-        self.images = {}
-        self.load_images()
-
-        # Hauptfenster
-        self.gui = Tk()
+        self.gui = tk.Tk()
         self.gui.title("Chuck-A-Luck")
         self.gui.geometry("1000x800")
-        self.gui.resizable(False, False)
 
-        # Haupt-Frame
-        self.frameGUI = Frame(master=self.gui, bg="#F5F5F5")
+        self.frameGUI = tk.Frame(master=self.gui, bg="#F5F5F5")
         self.frameGUI.place(x=0, y=0, width=1000, height=800)
 
-        # Start-Ansicht aufbauen
-        self.build_start_view()
+        self.base = Path(__file__).parent
 
-        # Ereignisschleife starten
+        # Spielobjekte
+        self.spielfeld = Spielfeld(auszahlungs_faktor=1.0)  # klassisch
+        self.spieler = Spieler(start_geld=20)
+
+        # Assets-Puffer
+        self.images = {}
+
+        self.build_start_view()
         self.gui.mainloop()
 
-    def load_images(self):
-        """Lädt alle Bilder für das Spiel"""
+    # ---------- Hilfen für Bilder ----------
+    def load_img(self, name, subsample=None):
+        """Lädt ein Bild (PNG) relativ zum Skriptordner. Hält Referenz in self.images."""
+        path = self.base / name
         try:
-            # Würfelbilder laden
-            for i in range(1, 7):
-                img = Image.open(os.path.join(self.base_path, "assets", f"wuerfel{i}.png"))
-                img = img.resize((100, 100), Image.Resampling.LANCZOS)
-                self.images[f"wuerfel{i}"] = ImageTk.PhotoImage(img)
+            img = tk.PhotoImage(file=str(path))
+            if subsample:
+                img = img.subsample(*subsample)
+        except tk.TclError:
+            # Platzhalter
+            img = tk.PhotoImage(width=64, height=64)
+        self.images[name + f"_{subsample}"] = img
+        return img
 
-            # Tile-Bilder laden
-            for i in range(1, 7):
-                img = Image.open(os.path.join(self.base_path, "assets", f"tile_{i}.png"))
-                img = img.resize((120, 120), Image.Resampling.LANCZOS)
-                self.images[f"tile_{i}"] = ImageTk.PhotoImage(img)
-
-            # Coin-Bild laden
-            img = Image.open(os.path.join(self.base_path, "assets", "stableCoinEuro.png"))
-            img = img.resize((40, 40), Image.Resampling.LANCZOS)
-            self.images["coin"] = ImageTk.PhotoImage(img)
-
-            # Kleinere Coin-Version
-            img = Image.open(os.path.join(self.base_path, "assets", "stableCoinEuro.png"))
-            img = img.resize((25, 25), Image.Resampling.LANCZOS)
-            self.images["coin_small"] = ImageTk.PhotoImage(img)
-
-            # Emotion-SVGs laden (als PNG konvertiert über PIL)
-            emotions = ["neutral", "optimistisch", "euphorisch", "frustriert", "angespannt"]
-            for emotion in emotions:
-                try:
-                    # Versuche SVG zu laden (funktioniert nur mit cairosvg)
-                    svg_path = os.path.join(self.base_path, f"{emotion}.svg")
-                    # Fallback: Erstelle einfache Emotion-Icons als Text
-                    self.images[emotion] = None
-                except:
-                    self.images[emotion] = None
-
-        except Exception as e:
-            print(f"Fehler beim Laden der Bilder: {e}")
-
+    # ---------- Views ----------
     def build_start_view(self):
-        """Startbildschirm mit Spielmodus-Auswahl"""
         for w in self.frameGUI.winfo_children():
             w.destroy()
 
-        # Titel
-        label_title = Label(
-            master=self.frameGUI,
-            bg=self.frameGUI.cget("bg"),
-            font=("Arial", 40, "bold"),
-            text="🎲 CHUCK-A-LUCK 🎲",
-        )
-        label_title.place(relx=0.5, rely=0.2, anchor="center")
+        tk.Label(self.frameGUI, bg=self.frameGUI.cget("bg"), font=("Arial", 30),
+                 text="CHUCK-A-LUCK").place(relx=0.5, rely=0.20, anchor="center")
 
-        # Untertitel
-        label_subtitle = Label(
-            master=self.frameGUI,
-            bg=self.frameGUI.cget("bg"),
-            font=("Arial", 16),
-            text="Wähle deinen Spielmodus",
-        )
-        label_subtitle.place(relx=0.5, rely=0.3, anchor="center")
-
-        # Container für Buttons
-        button_frame = Frame(master=self.frameGUI, bg=self.frameGUI.cget("bg"))
+        button_frame = tk.Frame(self.frameGUI, bg=self.frameGUI.cget("bg"))
         button_frame.place(relx=0.5, rely=0.5, anchor="center")
 
-        # FEEL IT! Button
-        btn_feeling = Button(
-            master=button_frame,
-            text="FEEL IT! 🎮\n(Manuelles Spielen)",
-            width=20,
-            height=3,
-            font=("Arial", 14, "bold"),
-            bg="#4CAF50",
-            fg="white",
-            command=self.mode_feeling,
-        )
-        btn_feeling.grid(row=0, column=0, padx=20, pady=10)
-
-        # Statistik Button
-        btn_stat = Button(
-            master=button_frame,
-            text="STATISTIK 📊\n(Theoretisches Spiel)",
-            width=20,
-            height=3,
-            font=("Arial", 14, "bold"),
-            bg="#2196F3",
-            fg="white",
-            command=self.mode_statistic,
-        )
-        btn_stat.grid(row=0, column=1, padx=20, pady=10)
+        tk.Button(button_frame, text="Feeling", width=16, height=2,
+                  command=self.mode_feeling).grid(row=0, column=0, padx=20, pady=10)
+        tk.Button(button_frame, text="Statistik", width=16, height=2,
+                  command=self.mode_statistic).grid(row=0, column=1, padx=20, pady=10)
 
     def mode_feeling(self):
-        """FEEL IT! Mode - Manuelles Spielen"""
         self.mode = "feeling"
-
-        # Spieler und Spielfeld initialisieren
-        self.spieler = spieler.Spieler(start_geld=100)
-        self.spielfeld = spielfeld.Spielfeld(auszahlungs_faktor=1.0)
-        self.selected_tile = None
-        self.current_bet = 0
-
-        self.build_feeling_view()
-
-    def build_feeling_view(self):
-        """Baut die FEEL IT! Spielansicht auf"""
         for w in self.frameGUI.winfo_children():
             w.destroy()
 
-        # Header
-        header_frame = Frame(master=self.frameGUI, bg="#2E7D32", height=80)
-        header_frame.pack(fill=X)
+        # Kopf
+        tk.Label(self.frameGUI, bg=self.frameGUI.cget("bg"), font=("Arial", 18),
+                 text="Modus: Feeling").place(relx=0.5, rely=0.08, anchor="center")
 
-        Label(
-            master=header_frame,
-            text="FEEL IT! MODE",
-            font=("Arial", 24, "bold"),
-            bg="#2E7D32",
-            fg="white"
-        ).pack(pady=20)
+        # Links: Spieler-Coins (2 Spalten à 10)
+        self.left_container = tk.Frame(self.frameGUI, bg=self.frameGUI.cget("bg"))
+        self.left_container.place(relx=0.12, rely=0.45, anchor="center")
 
-        # Hauptspielbereich
-        game_frame = Frame(master=self.frameGUI, bg="#F5F5F5")
-        game_frame.pack(fill=BOTH, expand=True, padx=20, pady=10)
+        self.coin_img = self.load_img("stableCoinEuro.png", subsample=(30, 30))
+        self.coin_text_var = tk.StringVar(value=f"x {self.spieler.getDollar()}")
+        tk.Label(self.left_container, text="Coins:", font=("Arial", 14),
+                 bg=self.frameGUI.cget("bg")).grid(row=0, column=0, sticky="w", padx=(0, 4))
+        self.coin_text_label = tk.Label(self.left_container, textvariable=self.coin_text_var,
+                                        font=("Arial", 14), bg=self.frameGUI.cget("bg"))
+        self.coin_text_label.grid(row=0, column=1, sticky="w")
 
-        # Linke Seite: Spielfeld und Würfel
-        left_frame = Frame(master=game_frame, bg="#F5F5F5")
-        left_frame.pack(side=LEFT, fill=BOTH, expand=True)
+        self.coins_grid = tk.Frame(self.left_container, bg=self.frameGUI.cget("bg"))
+        self.coins_grid.grid(row=1, column=0, columnspan=2, pady=(6, 0))
+        self.coin_labels = []
+        self._rebuild_coin_grid()
 
-        # Spielfeld (3x2 Grid)
-        board_label = Label(
-            master=left_frame,
-            text="Wähle ein Feld:",
-            font=("Arial", 16, "bold"),
-            bg="#F5F5F5"
-        )
-        board_label.pack(pady=10)
+        # Mitte oben: Mood-Bild
+        containerMood = tk.Frame(self.frameGUI, bg=self.frameGUI.cget("bg"))
+        containerMood.place(relx=0.5, rely=0.26, anchor="center")
+        self.mood_label = tk.Label(containerMood, bg=self.frameGUI.cget("bg"))
+        self.mood_label.pack(pady=(6, 0))
+        self._update_mood_image()
 
-        board_frame = Frame(master=left_frame, bg="#F5F5F5")
-        board_frame.pack(pady=10)
+        # Tiles (2×3), Klick = Tipp setzen
+        containerTiles = tk.Frame(self.frameGUI, bg=self.frameGUI.cget("bg"))
+        containerTiles.place(relx=0.5, rely=0.58, anchor="center")
 
-        # Tiles als 3x2 Grid
-        self.tile_buttons = {}
-        for row in range(2):
-            for col in range(3):
-                tile_num = row * 3 + col + 1
-                btn = Button(
-                    master=board_frame,
-                    image=self.images[f"tile_{tile_num}"],
-                    command=lambda t=tile_num: self.select_tile(t),
-                    relief=RAISED,
-                    bd=3
-                )
-                btn.grid(row=row, column=col, padx=5, pady=5)
-                self.tile_buttons[tile_num] = btn
+        self.tiles_small = []
+        for i in range(1, 7):
+            img_small = self.load_img(f"tile_{i}.png", subsample=(10, 10))
+            self.tiles_small.append(img_small)
 
-        # Würfel-Anzeige
-        dice_label = Label(
-            master=left_frame,
-            text="Würfel:",
-            font=("Arial", 16, "bold"),
-            bg="#F5F5F5"
-        )
-        dice_label.pack(pady=(20, 10))
+        self.tile_buttons = []
+        for i, img_small in enumerate(self.tiles_small, start=1):
+            r, c = divmod(i - 1, 3)
+            btn = tk.Button(containerTiles, image=img_small,
+                            command=lambda n=i: self.on_tile_click(n))
+            btn.grid(row=r, column=c, padx=10, pady=10)
+            self.tile_buttons.append(btn)
 
-        dice_frame = Frame(master=left_frame, bg="#F5F5F5")
-        dice_frame.pack()
+        # Rechts unten: Würfelanzeige (3 Würfel) + „Würfeln“-Button
+        dice_container = tk.Frame(self.frameGUI, bg=self.frameGUI.cget("bg"))
+        dice_container.place(relx=0.85, rely=0.86, anchor="center")
 
+        self.dice_imgs = {n: self.load_img(f"wuerfel{n}.png", subsample=(4, 4)) for n in range(1, 7)}
+        # Startanzeige drei Einsen
         self.dice_labels = []
         for i in range(3):
-            lbl = Label(
-                master=dice_frame,
-                image=self.images["wuerfel1"],
-                bg="#F5F5F5"
-            )
-            lbl.pack(side=LEFT, padx=10)
+            lbl = tk.Label(dice_container, image=self.dice_imgs[1], bg=self.frameGUI.cget("bg"))
+            lbl.grid(row=0, column=i, padx=4)
             self.dice_labels.append(lbl)
 
-        # Rechte Seite: Spielerinfo, Emotion, Aktionen
-        right_frame = Frame(master=game_frame, bg="#FFFFFF", relief=RIDGE, bd=2)
-        right_frame.pack(side=RIGHT, fill=BOTH, padx=(20, 0))
+        tk.Button(dice_container, text="Würfeln", command=self.on_roll).grid(row=1, column=0, columnspan=3, pady=(6, 0))
 
-        # Spielerinfo
-        info_frame = Frame(master=right_frame, bg="#FFFFFF")
-        info_frame.pack(pady=20, padx=20)
+        # Zurück
+        tk.Button(self.frameGUI, text="Zurück", command=self.build_start_view
+                  ).place(relx=0.5, rely=0.86, anchor="center")
 
-        self.money_label = Label(
-            master=info_frame,
-            text=f"💰 Geld: ${self.spieler.getDollar()}",
-            font=("Arial", 18, "bold"),
-            bg="#FFFFFF"
-        )
-        self.money_label.pack(pady=5)
+        # Rundenausgabe
+        self.status_var = tk.StringVar(value="Setze 1 Coin, indem du auf eine Zahl (Tile) klickst.")
+        tk.Label(self.frameGUI, textvariable=self.status_var, bg=self.frameGUI.cget("bg"),
+                 font=("Arial", 12)).place(relx=0.5, rely=0.92, anchor="center")
 
-        self.balance_label = Label(
-            master=info_frame,
-            text=f"📊 Bilanz: ${self.spieler.getNetto():+d}",
-            font=("Arial", 14),
-            bg="#FFFFFF"
-        )
-        self.balance_label.pack(pady=5)
+        # Letzten Tipp merken, bis gewürfelt wurde
+        self.aktueller_tipp = None
+        self.gelegte_muenzen_buttons = set()
 
-        self.rounds_label = Label(
-            master=info_frame,
-            text=f"🎲 Runde: {self.spieler.runden}",
-            font=("Arial", 14),
-            bg="#FFFFFF"
-        )
-        self.rounds_label.pack(pady=5)
+    def _rebuild_coin_grid(self):
+        # Alte Labels räumen
+        for _, _, lbl in getattr(self, "coin_labels", []):
+            lbl.destroy()
+        self.coin_labels = []
 
-        # Emotion/Feeling Display
-        emotion_frame = Frame(master=right_frame, bg="#FFFFFF")
-        emotion_frame.pack(pady=20)
+        # 2 Spalten à 10
+        dollar = self.spieler.getDollar()
+        total = min(dollar, 20)
+        for i in range(total):
+            c = i // 10
+            r = i % 10
+            lbl = tk.Label(self.coins_grid, image=self.coin_img, bg=self.frameGUI.cget("bg"))
+            lbl.grid(row=r, column=c, padx=2, pady=2, sticky="n")
+            self.coin_labels.append((r, c, lbl))
 
-        Label(
-            master=emotion_frame,
-            text="Dein Feeling:",
-            font=("Arial", 14, "bold"),
-            bg="#FFFFFF"
-        ).pack()
+        # Reihenfolge zum Entfernen von unten rechts nach oben links
+        self.coin_labels.sort(key=lambda t: (t[1], t[0]), reverse=True)
 
-        self.emotion_label = Label(
-            master=emotion_frame,
-            text=self.get_emotion_emoji(self.spieler.getFeeling()),
-            font=("Arial", 48),
-            bg="#FFFFFF"
-        )
-        self.emotion_label.pack(pady=10)
-
-        self.emotion_text = Label(
-            master=emotion_frame,
-            text=self.spieler.getFeeling().upper(),
-            font=("Arial", 12, "bold"),
-            bg="#FFFFFF"
-        )
-        self.emotion_text.pack()
-
-        # Einsatz-Info
-        bet_frame = Frame(master=right_frame, bg="#FFE082", relief=RIDGE, bd=2)
-        bet_frame.pack(pady=10, padx=20, fill=X)
-
-        self.bet_label = Label(
-            master=bet_frame,
-            text="Wähle ein Feld!",
-            font=("Arial", 14, "bold"),
-            bg="#FFE082"
-        )
-        self.bet_label.pack(pady=10)
-
-        # Gewinn/Verlust Anzeige
-        self.result_label = Label(
-            master=right_frame,
-            text="",
-            font=("Arial", 16, "bold"),
-            bg="#FFFFFF"
-        )
-        self.result_label.pack(pady=10)
-
-        # Spiel-Button
-        self.play_button = Button(
-            master=right_frame,
-            text="🎲 WÜRFELN! 🎲",
-            font=("Arial", 16, "bold"),
-            bg="#FF9800",
-            fg="white",
-            state=DISABLED,
-            command=self.play_round,
-            width=15,
-            height=2
-        )
-        self.play_button.pack(pady=20)
-
-        # Zurück-Button
-        Button(
-            master=right_frame,
-            text="← Zurück zum Menü",
-            command=self.build_start_view,
-            font=("Arial", 10),
-            bg="#F5F5F5"
-        ).pack(pady=10)
-
-    def select_tile(self, tile_num):
-        """Wählt ein Tile für die Wette aus"""
-        if self.spieler.getDollar() <= 0:
-            self.result_label.config(text="❌ Kein Geld mehr!", fg="red")
-            return
-
-        # Vorherige Auswahl zurücksetzen
-        if self.selected_tile:
-            self.tile_buttons[self.selected_tile].config(relief=RAISED, bd=3)
-
-        # Neue Auswahl
-        self.selected_tile = tile_num
-        self.tile_buttons[tile_num].config(relief=SUNKEN, bd=5)
-
-        # UI aktualisieren
-        self.bet_label.config(text=f"Einsatz: $1 auf Feld {tile_num}")
-        self.play_button.config(state=NORMAL)
-        self.result_label.config(text="")
-
-    def play_round(self):
-        """Spielt eine Runde"""
-        if not self.selected_tile:
-            return
-
-        # Würfeln
-        result = self.spielfeld.rundeZocken(self.spieler, self.selected_tile)
-
-        if not result:
-            self.result_label.config(text="❌ Kein Geld mehr!", fg="red")
-            return
-
-        # Würfel anzeigen
-        augen = result["augen"]
-        for i, wert in enumerate(augen):
-            self.dice_labels[i].config(image=self.images[f"wuerfel{wert}"])
-
-        # Ergebnis anzeigen
-        treffer = result["treffer"]
-        netto = result["netto"]
-
-        if netto > 0:
-            # Gewinn
-            self.result_label.config(
-                text=f"🎉 GEWONNEN! +${netto}",
-                fg="green"
-            )
-            self.flash_background("green")
-        else:
-            # Verlust
-            self.result_label.config(
-                text=f"❌ Verloren: ${netto}",
-                fg="red"
-            )
-            self.flash_background("red")
-
-        # UI aktualisieren
-        self.update_player_info()
-
-        # Auswahl zurücksetzen
-        if self.selected_tile:
-            self.tile_buttons[self.selected_tile].config(relief=RAISED, bd=3)
-        self.selected_tile = None
-        self.play_button.config(state=DISABLED)
-        self.bet_label.config(text="Wähle ein Feld!")
-
-    def update_player_info(self):
-        """Aktualisiert die Spielerinformationen"""
-        self.money_label.config(text=f"💰 Geld: ${self.spieler.getDollar()}")
-        self.balance_label.config(text=f"📊 Bilanz: ${self.spieler.getNetto():+d}")
-        self.rounds_label.config(text=f"🎲 Runde: {self.spieler.runden}")
-
-        feeling = self.spieler.getFeeling()
-        self.emotion_label.config(text=self.get_emotion_emoji(feeling))
-        self.emotion_text.config(text=feeling.upper())
-
-    def get_emotion_emoji(self, feeling):
-        """Gibt das passende Emoji für das Feeling zurück"""
-        emotions = {
-            "neutral": "😐",
-            "optimistisch": "🙂",
-            "euphorisch": "🤩",
-            "frustriert": "😤",
-            "angespannt": "😰"
+    def _update_mood_image(self):
+        feeling = self.spieler.getFeeling() or "neutral"
+        candidates = {
+            "neutral": "neutral.png",
+            "optimistisch": "optimistisch.png",
+            "angespannt": "angespannt.png",
+            "frustriert": "frustriert.png",
+            "euphorisch": "euphorisch.png",
         }
-        return emotions.get(feeling, "😐")
+        name = candidates.get(feeling, "neutral.png")
+        img = self.load_img(name, subsample=(4, 4))
+        self.mood_label.config(image=img)
 
-    def flash_background(self, color):
-        """Lässt den Hintergrund kurz aufblinken"""
-        original_color = self.frameGUI.cget("bg")
+    # ---------- Interaktion ----------
+    def on_tile_click(self, tipp: int):
+        if self.spieler.getDollar() <= 0:
+            self._flash_label(self.coin_text_label)
+            self.status_var.set("Keine Coins mehr. Würfle oder starte neu.")
+            return
 
-        # Farbcodes für die Animation
-        if color == "green":
-            flash_color = "#4CAF50"
-        else:
-            flash_color = "#F44336"
+        # Einsatz (1 Coin) visuell auf Tile legen (ersetze Bild temporär durch Coin)
+        idx = tipp - 1
+        self.tile_buttons[idx].config(image=self.coin_img)
+        self.gelegte_muenzen_buttons.add(idx)
 
-        # Blitz-Animation
-        self.frameGUI.config(bg=flash_color)
-        self.gui.update()
-        self.gui.after(200, lambda: self.frameGUI.config(bg=original_color))
+        # Tipp merken und Spieler setzt im nächsten Schritt beim Würfeln
+        self.aktueller_tipp = tipp
+        self.status_var.set(f"Einsatz auf {tipp} gesetzt. Klicke 'Würfeln'.")
+
+    def on_roll(self):
+        # Falls kein Tipp gelegt, Hinweis
+        if not self.aktueller_tipp:
+            self.status_var.set("Bitte zuerst auf eine Zahl (Tile) klicken, um zu setzen.")
+            return
+
+        # Spiele eine Runde
+        result = self.spielfeld.rundeZocken(self.spieler, self.aktueller_tipp)
+        if result is None:
+            self.status_var.set("Kein Einsatz möglich (kein Dollar mehr).")
+            return
+
+        # Coins-UI aktualisieren (Dollar nahm um 1 ab; Gewinne gehen aufs Konto)
+        self.coin_text_var.set(f"x {self.spieler.getDollar()}")
+        self._rebuild_coin_grid()
+
+        # Zeige Würfelbilder
+        a1, a2, a3 = result["augen"]
+        for lbl, a in zip(self.dice_labels, [a1, a2, a3]):
+            lbl.config(image=self.dice_imgs.get(a, self.dice_imgs[1]))
+
+        # Ergebnistext
+        tipp = result["tipp"]
+        treffer = result["treffer"]
+        einsatz = result["einsatz"]
+        ausz = result["auszahlung"]
+        netto = result["netto"]
+        self.status_var.set(
+            f"Runde {result['runde']}: Tipp {tipp}, Würfel {a1}-{a2}-{a3}, Treffer {treffer}, Auszahlung {ausz} (Netto {netto})."
+        )
+
+        # Mood aktualisieren
+        self._update_mood_image()
+
+        # Tile-Bilder zurücksetzen (nur die, auf denen wir eine Münze gelegt haben)
+        for idx in list(self.gelegte_muenzen_buttons):
+            original_tile = self.tiles_small[idx]
+            self.tile_buttons[idx].config(image=original_tile)
+        self.gelegte_muenzen_buttons.clear()
+
+        # Nächste Runde: Tipp zurücksetzen
+        self.aktueller_tipp = None
+
+    def _flash_label(self, label: tk.Label):
+        orig = label.cget("fg") if label.cget("fg") else "black"
+        label.config(fg="red")
+        label.after(180, lambda: label.config(fg=orig))
 
     def mode_statistic(self):
-        """Statistik Mode - Theoretisches Spiel"""
         self.mode = "statistic"
-        self.build_statistic_view()
+        self.show_info("Modus: Statistik")
 
-    def build_statistic_view(self):
-        """Baut die Statistik-Ansicht auf"""
+        stats = self.spielfeld.fairnessStatistik()
+        txt = [
+            f"Runden: {stats['runden']}",
+            f"Gesamt Einsatz: {stats['gesamt_einsatz']}",
+            f"Gesamt Auszahlung: {stats['gesamt_auszahlung']}",
+            f"Hausgewinn: {stats['hausgewinn']}",
+            f"Emp. Auszahlungsquote: {stats['empirische_auszahlungsquote']:.3f}",
+            f"Theor. Auszahlungsquote: {stats['theoretische_auszahlungsquote']:.3f}",
+            f"Emp. Trefferverteilung: {stats['empirische_trefferverteilung']}",
+            f"Theor. Trefferverteilung: {stats['theoretische_trefferverteilung']}",
+            f"Fair (±5%): {stats['fair']}",
+        ]
+        label = tk.Label(self.frameGUI, text="\n".join(txt), bg=self.frameGUI.cget("bg"), font=("Consolas", 11), justify="left")
+        label.place(relx=0.5, rely=0.58, anchor="center")
+
+        tk.Button(self.frameGUI, text="Zurück", command=self.build_start_view
+                  ).place(relx=0.5, rely=0.86, anchor="center")
+
+    def show_info(self, text: str):
         for w in self.frameGUI.winfo_children():
             w.destroy()
+        tk.Label(self.frameGUI, bg=self.frameGUI.cget("bg"), font=("Arial", 18), text=text
+                 ).place(relx=0.5, rely=0.2, anchor="center")
 
-        # Header
-        header_frame = Frame(master=self.frameGUI, bg="#1976D2", height=80)
-        header_frame.pack(fill=X)
-
-        Label(
-            master=header_frame,
-            text="STATISTIK MODE",
-            font=("Arial", 24, "bold"),
-            bg="#1976D2",
-            fg="white"
-        ).pack(pady=20)
-
-        # Hauptbereich
-        main_frame = Frame(master=self.frameGUI, bg="#F5F5F5")
-        main_frame.pack(fill=BOTH, expand=True, padx=20, pady=20)
-
-        # Beschreibung
-        Label(
-            master=main_frame,
-            text="Theoretische Simulation des Chuck-A-Luck Spiels",
-            font=("Arial", 16),
-            bg="#F5F5F5"
-        ).pack(pady=20)
-
-        # Eingabebereich
-        input_frame = Frame(master=main_frame, bg="#FFFFFF", relief=RIDGE, bd=2)
-        input_frame.pack(pady=20, padx=50, fill=X)
-
-        Label(
-            master=input_frame,
-            text="Anzahl Runden:",
-            font=("Arial", 14),
-            bg="#FFFFFF"
-        ).pack(pady=(20, 5))
-
-        self.rounds_entry = Entry(
-            master=input_frame,
-            font=("Arial", 14),
-            width=10,
-            justify=CENTER
-        )
-        self.rounds_entry.insert(0, "1000")
-        self.rounds_entry.pack(pady=(5, 10))
-
-        Label(
-            master=input_frame,
-            text="Startkapital:",
-            font=("Arial", 14),
-            bg="#FFFFFF"
-        ).pack(pady=(10, 5))
-
-        self.money_entry = Entry(
-            master=input_frame,
-            font=("Arial", 14),
-            width=10,
-            justify=CENTER
-        )
-        self.money_entry.insert(0, "1000")
-        self.money_entry.pack(pady=(5, 20))
-
-        # Simulation starten
-        Button(
-            master=input_frame,
-            text="📊 SIMULATION STARTEN",
-            font=("Arial", 14, "bold"),
-            bg="#4CAF50",
-            fg="white",
-            command=self.run_simulation,
-            width=20,
-            height=2
-        ).pack(pady=20)
-
-        # Ergebnisbereich
-        self.stat_result_frame = Frame(master=main_frame, bg="#FFFFFF", relief=RIDGE, bd=2)
-        self.stat_result_frame.pack(fill=BOTH, expand=True, pady=20)
-
-        self.stat_text = Text(
-            master=self.stat_result_frame,
-            font=("Courier", 10),
-            bg="#FFFFFF",
-            wrap=WORD
-        )
-        self.stat_text.pack(fill=BOTH, expand=True, padx=10, pady=10)
-
-        # Zurück-Button
-        Button(
-            master=main_frame,
-            text="← Zurück zum Menü",
-            command=self.build_start_view,
-            font=("Arial", 10),
-            bg="#F5F5F5"
-        ).pack(pady=10)
-
-    def run_simulation(self):
-        """Führt eine statistische Simulation durch"""
-        try:
-            num_rounds = int(self.rounds_entry.get())
-            start_money = int(self.money_entry.get())
-        except ValueError:
-            self.stat_text.delete(1.0, END)
-            self.stat_text.insert(END, "❌ Ungültige Eingabe! Bitte Zahlen eingeben.")
-            return
-
-        # Simulation durchführen
-        sim_player = spieler.Spieler(start_geld=start_money)
-        sim_field = spielfeld.Spielfeld(auszahlungs_faktor=1.0)
-
-        self.stat_text.delete(1.0, END)
-        self.stat_text.insert(END, "🎲 SIMULATION LÄUFT...\n\n")
-        self.gui.update()
-
-        # Spiele Runden (immer auf Feld 1 tippen)
-        for _ in range(num_rounds):
-            if sim_player.getDollar() <= 0:
-                break
-            sim_field.rundeZocken(sim_player, 1)
-
-        # Statistiken abrufen
-        stats = sim_field.fairnessStatistik()
-
-        # Ergebnisse anzeigen
-        self.stat_text.delete(1.0, END)
-        self.stat_text.insert(END, "═" * 50 + "\n")
-        self.stat_text.insert(END, "   CHUCK-A-LUCK SIMULATIONSERGEBNISSE\n")
-        self.stat_text.insert(END, "═" * 50 + "\n\n")
-
-        self.stat_text.insert(END, f"Anzahl Runden:           {stats['runden']}\n")
-        self.stat_text.insert(END, f"Startkapital:            ${start_money}\n")
-        self.stat_text.insert(END, f"Endkapital:              ${sim_player.getVermoegen()}\n")
-        self.stat_text.insert(END, f"Netto Gewinn/Verlust:    ${sim_player.getNetto():+d}\n\n")
-
-        self.stat_text.insert(END, "─" * 50 + "\n")
-        self.stat_text.insert(END, "GELDFLÜSSE\n")
-        self.stat_text.insert(END, "─" * 50 + "\n")
-        self.stat_text.insert(END, f"Gesamt Einsatz:          ${stats['gesamt_einsatz']}\n")
-        self.stat_text.insert(END, f"Gesamt Auszahlung:       ${stats['gesamt_auszahlung']}\n")
-        self.stat_text.insert(END, f"Hausgewinn:              ${stats['hausgewinn']}\n\n")
-
-        self.stat_text.insert(END, "─" * 50 + "\n")
-        self.stat_text.insert(END, "AUSZAHLUNGSQUOTEN\n")
-        self.stat_text.insert(END, "─" * 50 + "\n")
-        self.stat_text.insert(END, f"Empirische Quote:        {stats['empirische_auszahlungsquote']:.4f}\n")
-        self.stat_text.insert(END, f"Theoretische Quote:      {stats['theoretische_auszahlungsquote']:.4f}\n")
-        self.stat_text.insert(END, f"Fair (±5%):              {'✓ JA' if stats['fair'] else '✗ NEIN'}\n\n")
-
-        self.stat_text.insert(END, "─" * 50 + "\n")
-        self.stat_text.insert(END, "TREFFERVERTEILUNG\n")
-        self.stat_text.insert(END, "─" * 50 + "\n")
-        self.stat_text.insert(END, f"{'Treffer':<10} {'Empirisch':<15} {'Theoretisch':<15}\n")
-        self.stat_text.insert(END, "─" * 50 + "\n")
-
-        for i in range(4):
-            emp = stats['empirische_trefferverteilung'][i]
-            theo = stats['theoretische_trefferverteilung'][i]
-            self.stat_text.insert(END, f"{i:<10} {emp:>6.2%}         {theo:>6.2%}\n")
-
-        self.stat_text.insert(END, "\n")
-        self.stat_text.insert(END, "─" * 50 + "\n")
-        self.stat_text.insert(END, "SPIELER-FEELING\n")
-        self.stat_text.insert(END, "─" * 50 + "\n")
-        self.stat_text.insert(END, f"Aktuelles Feeling:       {sim_player.getFeeling().upper()} {self.get_emotion_emoji(sim_player.getFeeling())}\n")
-        self.stat_text.insert(END, "\n═" * 50 + "\n")
-
-# App starten
 if __name__ == "__main__":
     GUI()
 
