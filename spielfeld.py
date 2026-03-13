@@ -130,8 +130,15 @@ class Spielfeld:
             3: 1 / 216,
         }
 
-        theoretischer_erwarteter_treffer = 0.5
-        theoretische_auszahlungsquote = self.auszahlungs_faktor * theoretischer_erwarteter_treffer
+
+        # Theoretische Auszahlungsquote nach aktueller Regel:
+        # 0 Treffer -> 0, 1 Treffer -> 2, 2 Treffer -> 3, 3 Treffer -> 4 (jeweils bei Einsatz=1).
+        theoretische_auszahlungsquote = (
+            theoretische_trefferverteilung[0] * 0
+            + theoretische_trefferverteilung[1] * 2
+            + theoretische_trefferverteilung[2] * 3
+            + theoretische_trefferverteilung[3] * 4
+        )
 
         if self.runden == 0:
             empirische_trefferverteilung = {0: 0.0, 1: 0.0, 2: 0.0, 3: 0.0}
