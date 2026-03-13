@@ -1,4 +1,4 @@
-from spieler import 
+from spieler, wuerfel import *
 
 class Spielfeld(object):
   def __init__(self):
