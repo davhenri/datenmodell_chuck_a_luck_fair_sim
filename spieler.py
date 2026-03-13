@@ -1,4 +1,4 @@
-class Player:
+class Spieler(object):
 
     def __init__(self, start_geld):
         """Initialisierung"""
