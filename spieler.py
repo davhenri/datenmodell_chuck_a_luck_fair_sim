@@ -1,8 +1,12 @@
 class Player:
 
     def __init__(self, start_geld):
-        # Geld des Spielers in Dollar
+        # Geld zum Setzen
         self.dollar = start_geld
+        
+        # Konto für Gewinne
+        self.konto = 0
+
 
     def setze(self):
         """
@@ -15,14 +19,17 @@ class Player:
             print("Kein Geld mehr!")
             return 0
 
-    def gewinne(self, betrag):
+
+    def gewinnVerbuchen(self, gewinn):
         """
-        Spieler gewinnt Geld.
+        Gewinn wird auf dem Konto verbucht.
         """
-        self.dollar += betrag
+        self.konto += gewinn
+
 
     def getDollar(self):
-        """
-        Gibt aktuelles Guthaben zurück.
-        """
         return self.dollar
+
+
+    def getKonto(self):
+        return self.konto
