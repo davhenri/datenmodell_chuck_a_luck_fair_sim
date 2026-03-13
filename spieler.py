@@ -2,6 +2,7 @@ class Player:
 
     def __init__(self, start_geld):
         # Geld zum Setzen
+        self.start_geld = start_geld
         self.dollar = start_geld
         
         # Konto für Gewinne
@@ -64,7 +65,6 @@ class Player:
 
     def getDollar(self):
         return self.dollar
-
 
     def getKonto(self):
         return self.konto
