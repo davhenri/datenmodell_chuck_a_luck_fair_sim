@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Feeling angespannt">
+  <defs>
+    <radialGradient id="face" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fff6b2"/>
+      <stop offset="65%" stop-color="#ffd95d"/>
+      <stop offset="100%" stop-color="#ffb93a"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="128" cy="128" r="92" fill="url(#face)" stroke="#cc7f1e" stroke-width="6"/>
+
+  <path d="M76 98 L114 92" stroke="#4b2b00" stroke-width="7" stroke-linecap="round"/>
+  <path d="M180 98 L142 92" stroke="#4b2b00" stroke-width="7" stroke-linecap="round"/>
+
+  <circle cx="98" cy="110" r="8" fill="#4b2b00"/>
+  <circle cx="158" cy="110" r="8" fill="#4b2b00"/>
+
+  <path d="M84 154 C102 144, 154 144, 172 154" fill="none" stroke="#4b2b00" stroke-width="8" stroke-linecap="round"/>
+
+  <path d="M176 66 C168 84, 186 86, 178 102" fill="none" stroke="#62cfff" stroke-width="6" stroke-linecap="round"/>
+  <circle cx="178" cy="106" r="6" fill="#62cfff"/>
+</svg>

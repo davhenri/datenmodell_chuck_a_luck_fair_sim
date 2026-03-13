@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Feeling optimistisch">
+  <defs>
+    <radialGradient id="face" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fff9b8"/>
+      <stop offset="65%" stop-color="#ffe169"/>
+      <stop offset="100%" stop-color="#ffc738"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="128" cy="128" r="92" fill="url(#face)" stroke="#d08c13" stroke-width="6"/>
+
+  <path d="M82 96 C92 86, 104 86, 114 96" fill="none" stroke="#4b2b00" stroke-width="7" stroke-linecap="round"/>
+  <path d="M142 96 C152 86, 164 86, 174 96" fill="none" stroke="#4b2b00" stroke-width="7" stroke-linecap="round"/>
+
+  <circle cx="98" cy="108" r="8" fill="#4b2b00"/>
+  <circle cx="158" cy="108" r="8" fill="#4b2b00"/>
+
+  <path d="M78 146 C96 170, 160 170, 178 146" fill="none" stroke="#4b2b00" stroke-width="8" stroke-linecap="round"/>
+
+  <path d="M186 58 L198 72 L214 70 L204 84 L210 100 L194 94 L180 106 L182 88 L168 78 L186 74 Z" fill="#5fd9ff" stroke="#1a7ea0" stroke-width="4"/>
+</svg>

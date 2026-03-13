@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Feeling euphorisch">
+  <defs>
+    <radialGradient id="face" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#fff9a8"/>
+      <stop offset="65%" stop-color="#ffd33d"/>
+      <stop offset="100%" stop-color="#ffaf00"/>
+    </radialGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6"/>
+    </filter>
+  </defs>
+
+  <circle cx="128" cy="128" r="98" fill="#ffbf00" opacity="0.18" filter="url(#glow)"/>
+  <circle cx="128" cy="128" r="92" fill="url(#face)" stroke="#d68700" stroke-width="6"/>
+
+  <path d="M86 102 L98 84 L110 102 L94 96 Z" fill="#4b2b00"/>
+  <path d="M146 102 L158 84 L170 102 L154 96 Z" fill="#4b2b00"/>
+
+  <path d="M74 138 C92 174, 164 174, 182 138" fill="#9e1a1a" stroke="#6c0c0c" stroke-width="5"/>
+  <path d="M84 142 C102 160, 154 160, 172 142" fill="none" stroke="#ffd6d6" stroke-width="5" stroke-linecap="round"/>
+
+  <path d="M52 48 L66 66" stroke="#ffcf44" stroke-width="7" stroke-linecap="round"/>
+  <path d="M30 88 L52 92" stroke="#ffcf44" stroke-width="7" stroke-linecap="round"/>
+  <path d="M204 48 L190 66" stroke="#ffcf44" stroke-width="7" stroke-linecap="round"/>
+  <path d="M226 88 L204 92" stroke="#ffcf44" stroke-width="7" stroke-linecap="round"/>
+</svg>

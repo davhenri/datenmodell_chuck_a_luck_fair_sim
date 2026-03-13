@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Feeling frustriert">
+  <defs>
+    <radialGradient id="face" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#ffe2cc"/>
+      <stop offset="65%" stop-color="#ff9c66"/>
+      <stop offset="100%" stop-color="#ef5f3a"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="128" cy="128" r="92" fill="url(#face)" stroke="#b43b1f" stroke-width="6"/>
+
+  <path d="M74 102 L114 92" stroke="#4a1208" stroke-width="8" stroke-linecap="round"/>
+  <path d="M182 102 L142 92" stroke="#4a1208" stroke-width="8" stroke-linecap="round"/>
+
+  <path d="M88 126 L108 106" stroke="#4a1208" stroke-width="7" stroke-linecap="round"/>
+  <path d="M88 106 L108 126" stroke="#4a1208" stroke-width="7" stroke-linecap="round"/>
+  <path d="M148 126 L168 106" stroke="#4a1208" stroke-width="7" stroke-linecap="round"/>
+  <path d="M148 106 L168 126" stroke="#4a1208" stroke-width="7" stroke-linecap="round"/>
+
+  <path d="M82 170 C104 142, 152 142, 174 170" fill="none" stroke="#4a1208" stroke-width="9" stroke-linecap="round"/>
+
+  <path d="M198 46 L210 70 L236 74 L216 92 L220 118 L198 106 L176 118 L180 92 L160 74 L186 70 Z" fill="#ff4a4a" stroke="#8f1313" stroke-width="4"/>
+</svg>

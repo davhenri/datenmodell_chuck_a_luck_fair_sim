@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256" role="img" aria-label="Feeling neutral">
+  <defs>
+    <radialGradient id="face" cx="35%" cy="30%" r="70%">
+      <stop offset="0%" stop-color="#f9fbff"/>
+      <stop offset="70%" stop-color="#e3ebf5"/>
+      <stop offset="100%" stop-color="#c8d7e8"/>
+    </radialGradient>
+  </defs>
+
+  <circle cx="128" cy="128" r="92" fill="url(#face)" stroke="#7f95ad" stroke-width="6"/>
+
+  <circle cx="98" cy="110" r="8" fill="#31465e"/>
+  <circle cx="158" cy="110" r="8" fill="#31465e"/>
+
+  <line x1="84" y1="154" x2="172" y2="154" stroke="#31465e" stroke-width="8" stroke-linecap="round"/>
+
+  <circle cx="70" cy="80" r="4" fill="#ffffff" opacity="0.55"/>
+  <circle cx="186" cy="176" r="5" fill="#ffffff" opacity="0.35"/>
+</svg>
